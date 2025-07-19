@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Segoe UI',Arial, Helvetica, sans-serif;
             background-color: #f3f4f6; 
         }
     </style>
@@ -15,9 +15,10 @@
 <body class="flex items-center justify-center min-h-screen p-4">
   <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
     <h1 class="text-3xl font-extrabold text-gray-900 mb-6 text-center">
-      💰 薪水小偷 💰
+      💰 Salary Thief 💰
     </h1>
-    <div class="mb-8">
+    <!-----Salary Details Form------>
+    <div id="inputForm" class="mb-8">
       <h2 class="text-xl font-semibold text-gray-800 mb-4">Enter Your Salary Details</h2>
       
       <div class="mb-4">
@@ -40,8 +41,27 @@
 
       <button id="setRateButton"
               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">Start Stealing</button>
-    
+      
+      <!-----Show Hourly Rate------>
+      <p id="hourlyRateDisplay" class="text-center text-sm text-gray-600 mt-4 " >
+        Your hourly rate: <span class="font-bold text-green-700" id="currentHourlyRate">RM 0.00</span>
+      </p>
     </div>
+
+    <!-----Show Timer------>
+    <div id="timer" class="text-center">
+      <!------Show Stolen Salary------>
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">You've Stolen :</h2>
+      <p id="stolenSalaryDisplay" class="text-6xl font-semibold text-green-600 mb-4">RM 0.00</p>
+      <!-------show idle time-------->
+      <p id="idleTimeDisplay" class="text-2xl text-gray-600 mb-6">00:00:00:00</p>
+      <!-------Buttons--------->
+      <div>
+        <button id="startButton" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200">Start</button>
+        <button id="stopButton" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200">Stop</button>
+      </div>
+      <button id="resetButton" class="mt-4 bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded w-full focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors duration-200">Reset</button>
+    </div>    
   </div>
     <script>
       
