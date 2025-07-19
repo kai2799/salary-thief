@@ -24,7 +24,7 @@
       <div class="mb-4">
         <label for="monthlySalary" class="block text-gray-700 text-sm font-bold mb-2">Monthly Salary (RM):</label>
         <input type="number" id="monthlySalary" placeholder="e.g., 5000"
-               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leaning-tight focus:outline-none focus:ring-2 focus:ring-blue-500 ">
+               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 ">
       </div>
       
       <div class="mb-4">
@@ -43,28 +43,192 @@
               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">Start Stealing</button>
       
       <!-----Show Hourly Rate------>
-      <p id="hourlyRateDisplay" class="text-center text-sm text-gray-600 mt-4 " >
+      <p id="hourlyRateDisplay" class="text-center text-sm text-gray-600 mt-4 hidden" >
         Your hourly rate: <span class="font-bold text-green-700" id="currentHourlyRate">RM 0.00</span>
       </p>
     </div>
 
     <!-----Show Timer------>
-    <div id="timer" class="text-center">
+    <div id="timerInterface" class="hidden text-center">
       <!------Show Stolen Salary------>
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">You've Stolen :</h2>
+      <h2 class="text-xl font-semibold text-gray-800 mb-4 ">You've Stolen :</h2>
       <p id="stolenSalaryDisplay" class="text-6xl font-semibold text-green-600 mb-4">RM 0.00</p>
       <!-------show idle time-------->
       <p id="idleTimeDisplay" class="text-2xl text-gray-600 mb-6">00:00:00:00</p>
       <!-------Buttons--------->
-      <div>
-        <button id="startButton" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200">Start</button>
-        <button id="stopButton" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200">Stop</button>
+      <div class="flex space-x-4">
+        <button id="startButton" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200">
+          Start
+        </button>
+        <button id="stopButton" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200">
+          Stop
+        </button>
       </div>
-      <button id="resetButton" class="mt-4 bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded w-full focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors duration-200">Reset</button>
-    </div>    
+      <button id="resetButton" class="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded w-full focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors duration-200">
+          Reset
+      </button>
   </div>
     <script>
+      // --- DOM Elements ---
+      const monthlySalaryInput = document.getElementById('monthlySalary');
+      const dailyHoursInput = document.getElementById('dailyHours');
+      const workDaysInput = document.getElementById('workDays');
+      const setRateButton = document.getElementById('setRateButton');
+      const hourlyRateDisplayDiv = document.getElementById('hourlyRateDisplay');
+      const currentHourlyRateSpan = document.getElementById('currentHourlyRate');
+
+      const inputForm = document.getElementById('inputForm');
+      const timerInterface = document.getElementById('timerInterface'); // Changed ID from 'timer' to 'timerInterface' for consistency
+
+      const stolenMoneyDisplay = document.getElementById('stolenSalaryDisplay');
+      const idleTimeDisplay = document.getElementById('idleTimeDisplay');
+      const startButton = document.getElementById('startButton');
+      const stopButton = document.getElementById('stopButton');
+      const resetButton = document.getElementById('resetButton');
+
+      // --- State Variables ---
+      let hourlyRate = 0;           // Calculated hourly rate
+      let totalIdleTime = 0;        // Total idle time in milliseconds
+      let timerInterval = null;     // Stores the interval ID for the timer
+      let lastUpdateTime = 0;       // Timestamp of the last time the timer was updated
+
+      // --- Helper Functions ---
+
+      /**
+       * Formats milliseconds into HH:MM:SS.ms string.
+       * @param {number} totalMilliseconds
+       * @returns {string} Formatted time string
+       */
+      function formatTime(totalMilliseconds) {
+          const ms = totalMilliseconds % 1000;
+          const totalSeconds = Math.floor(totalMilliseconds / 1000);
+          const seconds = totalSeconds % 60;
+          const minutes = Math.floor(totalSeconds / 60) % 60;
+          const hours = Math.floor(totalSeconds / 3600);
+
+          const pad = (num, size = 2) => num.toString().padStart(size, '0'); // Helper for padding
+
+          // Ensure milliseconds are always 3 digits
+          const formattedMs = ms.toString().padStart(3, '0');
+
+          return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${formattedMs}`;
+      }
+
       
+       // Updates the displayed stolen money and idle time.
+       
+      function updateDisplay() {
+          // Calculate money based on totalIdleTime in milliseconds
+          // (1 hour = 3,600,000 milliseconds)
+          const moneyStolen = (hourlyRate * (totalIdleTime / 3600000)).toFixed(2);
+          stolenMoneyDisplay.textContent = `RM ${moneyStolen}`;
+          idleTimeDisplay.textContent = formatTime(totalIdleTime);
+      }
+
+       // Calculates the hourly rate based on user inputs.
+       
+      function calculateRate() {
+          const monthlySalary = parseFloat(monthlySalaryInput.value);
+          const dailyHours = parseFloat(dailyHoursInput.value);
+          const workDays = parseFloat(workDaysInput.value);
+
+          // Basic input validation
+          if (isNaN(monthlySalary) || isNaN(dailyHours) || isNaN(workDays) ||
+              monthlySalary <= 0 || dailyHours <= 0 || workDays <= 0) {
+              alert('Please enter valid positive numbers for all fields.');
+              hourlyRate = 0; // Reset rate if inputs are invalid
+              hourlyRateDisplayDiv.classList.add('hidden'); // Hide hourly rate display
+              return;
+          }
+
+          const weeklyHours = dailyHours * workDays;
+          const monthlyHours = weeklyHours * 4.33; 
+
+          hourlyRate = monthlySalary / monthlyHours;
+          currentHourlyRateSpan.textContent = `RM ${hourlyRate.toFixed(2)}`;
+          hourlyRateDisplayDiv.classList.remove('hidden'); // Show hourly rate display
+
+          // Transition to timer interface
+          inputForm.classList.add('hidden');
+          timerInterface.classList.remove('hidden');
+
+          // Make sure all timer elements are visible
+          timerInterface.querySelectorAll('h2, p, button').forEach(el => el.classList.remove('hidden'));
+
+          // Ensure display is updated with initial 0s
+          updateDisplay();
+      }
+
+      // Starts the idle time timer.
+       
+      function startTimer() {
+          if (hourlyRate === 0) {
+              alert('Please set your salary details first.');
+              return;
+          }
+          if (timerInterval) return; // Prevent multiple intervals
+
+          lastUpdateTime = Date.now(); // Record when the timer was last updated
+
+          timerInterval = setInterval(() => {
+              const currentTime = Date.now();
+              const elapsedSinceLastUpdate = currentTime - lastUpdateTime;
+              totalIdleTime += elapsedSinceLastUpdate; // Add elapsed milliseconds
+              lastUpdateTime = currentTime; // Update last update time
+              updateDisplay();
+          }, 10); // Update every 10 milliseconds for smooth millisecond display
+
+          // Update button states
+          startButton.disabled = true;
+          stopButton.disabled = false;
+          resetButton.disabled = false;
+      }
+
+      // Stops the idle time timer.
+       
+      function stopTimer() {
+          if (!timerInterval) return; // Only clear if a timer is running
+
+          clearInterval(timerInterval);
+          timerInterval = null;
+
+          // Ensure the last bit of time is added for precision
+          totalIdleTime += (Date.now() - lastUpdateTime);
+          updateDisplay(); 
+
+          // Update button states
+          startButton.disabled = false;
+          stopButton.disabled = true;
+          resetButton.disabled = false;
+      }
+
+      // Resets the timer and stolen money to zero.
+      
+      function resetTimer() {
+          stopTimer(); // Ensure timer is stopped
+          totalIdleTime = 0;
+          lastUpdateTime = 0;
+          updateDisplay(); 
+
+          // Reset button states
+          startButton.disabled = false;
+          stopButton.disabled = true;
+          resetButton.disabled = false;
+
+      }
+
+      // --- Event Listeners ---
+      setRateButton.addEventListener('click', calculateRate);
+      startButton.addEventListener('click', startTimer);
+      stopButton.addEventListener('click', stopTimer);
+      resetButton.addEventListener('click', resetTimer);
+
+      // --- Initial Setup on Load ---
+      document.addEventListener('DOMContentLoaded', () => {
+          // Disable stop and reset buttons initially
+          stopButton.disabled = true;
+          resetButton.disabled = true;
+      });
     </script>
 </body>
 </html>
